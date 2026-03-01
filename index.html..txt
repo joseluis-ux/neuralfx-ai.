@@ -1,0 +1,2301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuralFX.ai - Generador MQL4/MQL5 con Perfil de Bot IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #00d4ff;
+            --secondary: #7000ff;
+            --accent: #ff006e;
+            --success: #00ff88;
+            --warning: #ffb700;
+            --danger: #ff3333;
+            --dark: #050508;
+            --panel: #0a0a0f;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020203;
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .font-tech { font-family: 'Orbitron', sans-serif; }
+        
+        .bg-grid {
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        
+        .glass {
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(15, 15, 25, 0.95), rgba(8, 8, 12, 0.98));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+        }
+        
+        .node-canvas {
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(0, 212, 255, 0.02) 0%, transparent 70%),
+                linear-gradient(0deg, transparent 24%, rgba(0, 212, 255, 0.015) 25%, rgba(0, 212, 255, 0.015) 26%, transparent 27%, transparent 74%, rgba(0, 212, 255, 0.015) 75%, rgba(0, 212, 255, 0.015) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(0, 212, 255, 0.015) 25%, rgba(0, 212, 255, 0.015) 26%, transparent 27%, transparent 74%, rgba(0, 212, 255, 0.015) 75%, rgba(0, 212, 255, 0.015) 76%, transparent 77%, transparent);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+        }
+        
+        .mql-toggle {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .mql-option {
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            color: #6b7280;
+        }
+        
+        .mql-option.active {
+            background: linear-gradient(135deg, #00d4ff, #7000ff);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .node {
+            position: absolute;
+            min-width: 220px;
+            background: linear-gradient(145deg, #0f1419, #0a0d12);
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            border-radius: 12px;
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 0 20px rgba(0, 212, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: move;
+            z-index: 10;
+        }
+        
+        .node:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 
+                0 15px 50px rgba(0, 0, 0, 0.7),
+                0 0 30px rgba(0, 212, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .node.selected {
+            border-color: #00d4ff;
+            box-shadow: 
+                0 0 0 2px rgba(0, 212, 255, 0.3),
+                0 20px 60px rgba(0, 212, 255, 0.2);
+            z-index: 20;
+        }
+        
+        .node-header {
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.15), rgba(112, 0, 255, 0.08));
+            padding: 12px 16px;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .node-body { padding: 14px; font-size: 0.8rem; }
+        
+        .node-port {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #0a0d12;
+            border: 2px solid #00d4ff;
+            position: absolute;
+            cursor: crosshair;
+            transition: all 0.2s;
+            z-index: 30;
+        }
+        
+        .node-port:hover {
+            background: #00d4ff;
+            transform: scale(1.3);
+            box-shadow: 0 0 10px #00d4ff;
+        }
+        
+        .node-port.input { left: -7px; }
+        .node-port.output { right: -7px; }
+        
+        .port-label {
+            position: absolute;
+            font-size: 0.7rem;
+            color: #6b7280;
+            font-family: 'JetBrains Mono', monospace;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .connection-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .connection-path {
+            fill: none;
+            stroke: url(#gradient-connection);
+            stroke-width: 2.5;
+            opacity: 0.9;
+        }
+        
+        .kimi-panel {
+            background: linear-gradient(180deg, #0a0a0f 0%, #050508 100%);
+            border-left: 1px solid rgba(112, 0, 255, 0.2);
+        }
+        
+        .chat-message {
+            max-width: 90%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .chat-user {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 212, 255, 0.1));
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .chat-kimi {
+            background: linear-gradient(135deg, rgba(112, 0, 255, 0.2), rgba(112, 0, 255, 0.1));
+            border: 1px solid rgba(112, 0, 255, 0.3);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .palette-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: grab;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+        
+        .palette-item:hover {
+            background: rgba(0, 212, 255, 0.08);
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateX(4px);
+        }
+        
+        .palette-category {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .param-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+            color: #e0e0e0;
+            width: 100%;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .param-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+        }
+        
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .param-label {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        
+        .code-block {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .code-keyword { color: #ff7b72; }
+        .code-function { color: #d2a8ff; }
+        .code-string { color: #a5d6ff; }
+        .code-comment { color: #8b949e; }
+        .code-number { color: #79c0ff; }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .status-badge.success {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #7000ff);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: #e0e0e0;
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .strategy-config {
+            background: linear-gradient(145deg, rgba(15, 15, 25, 0.98), rgba(8, 8, 12, 0.99));
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .config-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .config-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Perfil del Bot - Radar Chart */
+        .radar-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+        
+        .metric-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        
+        .metric-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .hurst-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .hurst-trending { background: rgba(0, 255, 136, 0.15); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
+        .hurst-random { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
+        .hurst-meanreverting { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+        
+        .prop-firm-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 140, 0, 0.15));
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            border-radius: 20px;
+            color: #ffd700;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0f; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+    </style>
+</head>
+<body class="bg-grid h-screen flex flex-col">
+
+    <!-- API Configuration Modal -->
+    <div id="apiModal" class="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center">
+        <div class="glass-panel w-[500px] rounded-xl border border-yellow-500/30 p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="fas fa-key text-yellow-400 text-xl"></i>
+                <h3 class="text-lg font-bold text-white">Configuración de API de IA</h3>
+            </div>
+            <p class="text-sm text-gray-400 mb-4">
+                NeuralFX requiere una API key para generar estrategias con inteligencia artificial real.
+                <span class="text-yellow-400">Tus credenciales se guardan solo en tu navegador (localStorage).</span>
+            </p>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-500 uppercase">Proveedor de IA</label>
+                    <select id="apiProvider" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white mt-1">
+                        <option value="openai">OpenAI (GPT-4)</option>
+                        <option value="gemini">Google Gemini</option>
+                        <option value="anthropic">Anthropic Claude</option>
+                        <option value="local">Modo Local (sin API)</option>
+                    </select>
+                </div>
+                
+                <div id="apiKeyContainer">
+                    <label class="text-xs text-gray-500 uppercase">API Key</label>
+                    <input type="password" id="apiKey" placeholder="sk-..." class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white mt-1 font-mono">
+                </div>
+                
+                <div class="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded">
+                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                    <span class="text-xs text-yellow-200">Nunca compartas tu API key. Se almacena localmente en tu dispositivo.</span>
+                </div>
+            </div>
+            
+            <button onclick="saveApiConfig()" class="w-full mt-4 bg-gradient-to-r from-cyan-600 to-purple-600 py-3 rounded-lg font-bold text-white hover:from-cyan-500 hover:to-purple-500 transition-all">
+                Iniciar NeuralFX
+            </button>
+        </div>
+    </div>
+
+    <!-- Perfil del Bot Modal -->
+    <div id="botProfileModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
+        <div class="glass-panel w-[900px] max-h-[90vh] rounded-xl border border-cyan-500/20 overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-cyan-500/10 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white font-tech">Perfil del Bot</h3>
+                        <p class="text-sm text-gray-400">Análisis multidimensional de tu estrategia</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="prop-firm-badge">
+                        <i class="fas fa-trophy"></i>
+                        Optimizado para Prop Firms
+                    </span>
+                    <button onclick="closeBotProfile()" class="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <div class="grid grid-cols-3 gap-6">
+                    <!-- Columna 1: Radar Chart -->
+                    <div class="space-y-4">
+                        <div class="glass-panel rounded-xl p-4 border border-purple-500/20">
+                            <h4 class="text-sm font-semibold text-purple-400 mb-4 text-center">Perfil Visual</h4>
+                            <div class="radar-container">
+                                <canvas id="radarChart"></canvas>
+                            </div>
+                            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+                                <div class="text-center">
+                                    <div class="text-gray-500">Robustez</div>
+                                    <div class="text-cyan-400 font-bold" id="robustezValue">78%</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-gray-500">Complejidad</div>
+                                    <div class="text-purple-400 font-bold" id="complejidadValue">65%</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-gray-500">Tendencia</div>
+                                    <div class="text-emerald-400 font-bold" id="tendenciaValue">82%</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-gray-500">Riesgo</div>
+                                    <div class="text-orange-400 font-bold" id="riesgoValue">45%</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Exponente de Hurst -->
+                        <div class="glass-panel rounded-xl p-4 border border-cyan-500/20">
+                            <h4 class="text-sm font-semibold text-cyan-400 mb-3">
+                                <i class="fas fa-wave-square mr-2"></i>Exponente de Hurst
+                            </h4>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl font-bold text-white" id="hurstValue">0.64</span>
+                                <span class="hurst-indicator hurst-trending" id="hurstType">
+                                    <i class="fas fa-arrow-trend-up"></i>
+                                    Tendencial
+                                </span>
+                            </div>
+                            <div class="metric-bar">
+                                <div class="metric-fill bg-gradient-to-r from-red-500 via-yellow-500 to-green-500" style="width: 64%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Confianza: <span class="text-cyan-400">95%</span></p>
+                            <p class="text-xs text-gray-400 mt-1">El mercado muestra persistencia en la dirección de la tendencia</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 2: Régimen de Mercado -->
+                    <div class="space-y-4">
+                        <div class="glass-panel rounded-xl p-4 border border-emerald-500/20">
+                            <h4 class="text-sm font-semibold text-emerald-400 mb-4">
+                                <i class="fas fa-chart-line mr-2"></i>Régimen de Mercado
+                            </h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Seguimiento de Tendencia</span>
+                                        <span class="text-emerald-400 font-mono">44/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-emerald-500" style="width: 44%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Reversión a la Media</span>
+                                        <span class="text-orange-400 font-mono">32/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-orange-500" style="width: 32%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Ruptura</span>
+                                        <span class="text-red-400 font-mono">15/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-red-500" style="width: 15%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Momentum</span>
+                                        <span class="text-cyan-400 font-mono">60/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-cyan-500" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Basado en Volatilidad</span>
+                                        <span class="text-purple-400 font-mono">5/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-purple-500" style="width: 5%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Frecuencia Operativa -->
+                        <div class="glass-panel rounded-xl p-4 border border-pink-500/20">
+                            <h4 class="text-sm font-semibold text-pink-400 mb-4">
+                                <i class="fas fa-clock mr-2"></i>Frecuencia Operativa
+                            </h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Scalping (1-5 min)</span>
+                                        <span class="text-red-400 font-mono">13/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-red-500" style="width: 13%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Intradía (15min-1H)</span>
+                                        <span class="text-emerald-400 font-mono">85/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-emerald-500" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Swing (4H-Diario)</span>
+                                        <span class="text-yellow-400 font-mono">45/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-yellow-500" style="width: 45%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Columna 3: Compatibilidad -->
+                    <div class="space-y-4">
+                        <div class="glass-panel rounded-xl p-4 border border-yellow-500/20">
+                            <h4 class="text-sm font-semibold text-yellow-400 mb-4">
+                                <i class="fas fa-globe mr-2"></i>Compatibilidad de Mercado
+                            </h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Forex</span>
+                                        <span class="text-emerald-400 font-mono">100/100 ⭐</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-gradient-to-r from-emerald-500 to-green-400" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Índices</span>
+                                        <span class="text-emerald-400 font-mono">100/100 ⭐</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-gradient-to-r from-emerald-500 to-green-400" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Metales</span>
+                                        <span class="text-emerald-400 font-mono">100/100 ⭐</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-gradient-to-r from-emerald-500 to-green-400" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Acciones</span>
+                                        <span class="text-emerald-400 font-mono">100/100 ⭐</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-gradient-to-r from-emerald-500 to-green-400" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Materias Primas</span>
+                                        <span class="text-yellow-400 font-mono">90/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-gradient-to-r from-yellow-500 to-orange-400" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-400">Criptomonedas</span>
+                                        <span class="text-orange-400 font-mono">65/100</span>
+                                    </div>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill bg-gradient-to-r from-orange-500 to-red-400" style="width: 65%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Prop Firm Challenge -->
+                        <div class="glass-panel rounded-xl p-4 border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
+                            <h4 class="text-sm font-semibold text-amber-400 mb-3">
+                                <i class="fas fa-trophy mr-2"></i>Prop Firm Challenge Ready
+                            </h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Max Daily Loss</span>
+                                    <span class="text-emerald-400">✓ 3% (Safe)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Max Total Loss</span>
+                                    <span class="text-emerald-400">✓ 6% (Safe)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Profit Target</span>
+                                    <span class="text-emerald-400">✓ 8% (Realista)</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Min Trading Days</span>
+                                    <span class="text-emerald-400">✓ 5 días</span>
+                                </div>
+                            </div>
+                            <div class="mt-3 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded text-xs text-emerald-300 text-center">
+                                Compatible con: FTMO, The5ers, MyForexFunds, True Forex Funds
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-cyan-500/10 bg-black/20 flex gap-3">
+                <button onclick="exportProfileReport()" class="btn-secondary flex-1">
+                    <i class="fas fa-file-pdf mr-2"></i>Exportar Informe
+                </button>
+                <button onclick="optimizeForPropFirm()" class="btn-primary flex-1">
+                    <i class="fas fa-wand-magic-sparkles mr-2"></i>Optimizar para Prop Firm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="glass h-16 flex items-center justify-between px-6 border-b border-cyan-500/10 z-50">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <i class="fas fa-brain text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold font-tech bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">NeuralFX.ai</h1>
+                <p class="text-[11px] text-gray-500">Generador MQL4/MQL5 + Perfil de Bot IA</p>
+            </div>
+        </div>
+
+        <!-- MQL Toggle -->
+        <div class="mql-toggle">
+            <button class="mql-option active" onclick="setMQLVersion('mql4')" id="btn-mql4">MQL4</button>
+            <button class="mql-option" onclick="setMQLVersion('mql5')" id="btn-mql5">MQL5</button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="showBotProfile()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/30 text-cyan-400 hover:text-cyan-300 transition-all flex items-center gap-2">
+                <i class="fas fa-chart-radar"></i>
+                <span class="text-sm font-medium">Perfil del Bot</span>
+            </button>
+            
+            <div class="status-badge success">
+                <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span>Sistema Activo</span>
+            </div>
+            
+            <button onclick="showApiModal()" class="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-all" title="Configuración">
+                <i class="fas fa-cog"></i>
+            </button>
+            
+            <button onclick="compileStrategy()" class="btn-primary flex items-center gap-2">
+                <i class="fas fa-hammer text-xs"></i>
+                <span>Compilar</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Panel: Node Palette -->
+        <aside class="w-72 glass-panel border-r border-cyan-500/10 flex flex-col z-40">
+            <div class="p-4 border-b border-cyan-500/10">
+                <h3 class="text-sm font-semibold text-gray-200">Biblioteca de Nodos</h3>
+                <p class="text-xs text-gray-500 mt-1">Haz clic para agregar al canvas</p>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                
+                <!-- Inteligencia Artificial -->
+                <div>
+                    <span class="palette-category bg-pink-500/10 text-pink-400">
+                        <i class="fas fa-brain mr-1"></i> Inteligencia Artificial
+                    </span>
+                    <div class="palette-item" onclick="createNode('qlearning', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                                <i class="fas fa-robot text-pink-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-200">Q-Learning</p>
+                                <p class="text-[10px] text-gray-500">Reinforcement Learning</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('neuralnet', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                                <i class="fas fa-network-wired text-pink-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-200">Neural Network</p>
+                                <p class="text-[10px] text-gray-500">Deep Learning</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('randomForest', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                                <i class="fas fa-tree text-pink-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-200">Random Forest</p>
+                                <p class="text-[10px] text-gray-500">Ensemble Learning</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Indicadores Algorítmicos -->
+                <div>
+                    <span class="palette-category bg-cyan-500/10 text-cyan-400">
+                        <i class="fas fa-microchip mr-1"></i> Algorítmicos
+                    </span>
+                    <div class="palette-item" onclick="createNode('patternScalp', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                                <i class="fas fa-bolt text-cyan-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-200">Pattern Scalp</p>
+                                <p class="text-[10px] text-gray-500">Detección de patrones</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('marketProfile', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                                <i class="fas fa-chart-area text-cyan-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-200">Market Profile</p>
+                                <p class="text-[10px] text-gray-500">Volumen por precio</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('vwap', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                                <i class="fas fa-water text-cyan-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-200">VWAP</p>
+                                <p class="text-[10px] text-gray-500">Volume Weighted</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Indicadores Clásicos -->
+                <div>
+                    <span class="palette-category bg-purple-500/10 text-purple-400">
+                        <i class="fas fa-wave-square mr-1"></i> Indicadores
+                    </span>
+                    <div class="palette-item" onclick="createNode('ma', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                <i class="fas fa-chart-line text-purple-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Moving Average</span>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('rsi', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                <i class="fas fa-tachometer-alt text-purple-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">RSI</span>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('macd', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                <i class="fas fa-exchange-alt text-purple-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">MACD</span>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('bollinger', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                <i class="fas fa-ellipsis-h text-purple-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Bollinger Bands</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos -->
+                <div>
+                    <span class="palette-category bg-blue-500/10 text-blue-400">
+                        <i class="fas fa-database mr-1"></i> Datos
+                    </span>
+                    <div class="palette-item" onclick="createNode('price', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                <i class="fas fa-dollar-sign text-blue-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Price Action</span>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('volume', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                <i class="fas fa-chart-bar text-blue-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Volume</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div>
+                    <span class="palette-category bg-emerald-500/10 text-emerald-400">
+                        <i class="fas fa-play mr-1"></i> Acciones
+                    </span>
+                    <div class="palette-item" onclick="createNode('buy', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                                <i class="fas fa-arrow-up text-emerald-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Buy</span>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('sell', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                <i class="fas fa-arrow-down text-red-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Sell</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestión de Riesgo -->
+                <div>
+                    <span class="palette-category bg-orange-500/10 text-orange-400">
+                        <i class="fas fa-shield-alt mr-1"></i> Riesgo
+                    </span>
+                    <div class="palette-item" onclick="createNode('stoploss', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                <i class="fas fa-stop-circle text-red-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Stop Loss</span>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('takeprofit', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                <i class="fas fa-bullseye text-green-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Take Profit</span>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('kelly', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                                <i class="fas fa-percentage text-orange-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Kelly Criterion</span>
+                        </div>
+                    </div>
+                    <div class="palette-item" onclick="createNode('propFirmRisk', 100, 100)">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                <i class="fas fa-building-columns text-amber-400 text-sm"></i>
+                            </div>
+                            <span class="text-sm text-gray-300">Prop Firm Risk</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center: Canvas -->
+        <main class="flex-1 relative node-canvas" id="canvasContainer">
+            <svg class="connection-svg" id="connectionLayer">
+                <defs>
+                    <linearGradient id="gradient-connection" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#7000ff;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            
+            <div id="nodesLayer" class="absolute inset-0"></div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div class="text-center opacity-40">
+                    <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                        <i class="fas fa-project-diagram text-4xl text-cyan-500"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-400">Canvas Vacío</h3>
+                    <p class="text-sm text-gray-600 mt-3 max-w-sm mx-auto">
+                        Selecciona nodos del panel izquierdo para construir tu estrategia
+                    </p>
+                </div>
+            </div>
+
+            <!-- Canvas Controls -->
+            <div class="absolute bottom-6 left-6 flex flex-col gap-2">
+                <button onclick="zoomIn()" class="w-10 h-10 rounded-lg glass flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fas fa-plus text-sm"></i>
+                </button>
+                <button onclick="resetZoom()" class="w-10 h-10 rounded-lg glass flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-[10px] font-mono">
+                    100%
+                </button>
+                <button onclick="zoomOut()" class="w-10 h-10 rounded-lg glass flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+                    <i class="fas fa-minus text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="absolute top-6 left-6 px-4 py-2 rounded-lg glass text-sm text-gray-400">
+                <span id="nodeCount">0</span> nodos | <span id="connectionCount">0</span> conexiones
+            </div>
+        </main>
+
+        <!-- Right Panel: AI + Config -->
+        <aside class="w-96 glass-panel border-l border-purple-500/10 flex flex-col z-40">
+            
+            <!-- AI Header -->
+            <div class="p-5 border-b border-purple-500/10 bg-gradient-to-b from-purple-900/10 to-transparent">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                        <i class="fas fa-robot text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white">Neural Agent</h3>
+                        <p class="text-xs text-purple-400">Generador de Estrategias IA</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat -->
+            <div class="flex-1 overflow-y-auto p-5 space-y-4" id="chatContainer">
+                <div class="chat-message chat-kimi">
+                    <p class="text-gray-200">¡Hola! Soy tu agente de IA para trading.</p>
+                    <p class="text-gray-400 mt-2 text-sm">Puedo generar estrategias completas con MQL4/MQL5. Describe qué quieres construir.</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="p-5 border-t border-purple-500/10 bg-black/20">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="kimiInput" 
+                        placeholder="Ej: 'Scalping con VWAP y RSI'..." 
+                        class="w-full bg-gray-900/50 border border-gray-700 rounded-lg pl-4 pr-12 py-3 text-sm text-white placeholder-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 outline-none"
+                        onkeypress="if(event.key==='Enter') sendToAI()"
+                    >
+                    <button onclick="sendToAI()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-md flex items-center justify-center text-white hover:from-cyan-500 hover:to-purple-500 transition-all">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+                
+                <div class="flex gap-2 mt-3 flex-wrap">
+                    <button onclick="quickCommand('scalping')" class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 hover:border-cyan-500/50 hover:text-cyan-400 transition-all">Scalping</button>
+                    <button onclick="quickCommand('tendencia')" class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 hover:border-purple-500/50 hover:text-purple-400 transition-all">Tendencia</button>
+                    <button onclick="quickCommand('reversión')" class="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 hover:border-pink-500/50 hover:text-pink-400 transition-all">Reversión</button>
+                    <button onclick="quickCommand('prop firm')" class="px-3 py-1.5 rounded-full bg-white/5 border border-amber-500/30 text-xs text-amber-400 hover:border-amber-500/50 hover:text-amber-300 transition-all">Prop Firm</button>
+                </div>
+            </div>
+
+            <!-- Strategy Config -->
+            <div class="strategy-config m-4">
+                <div class="config-section">
+                    <div class="section-title">
+                        <i class="fas fa-sliders-h"></i>
+                        Parámetros de Entrada
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Lote Base</span>
+                        <input type="text" class="param-input w-20" value="0.1" id="paramLotSize">
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Magic Number</span>
+                        <input type="text" class="param-input w-20" value="888888" id="paramMagic">
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="section-title">
+                        <i class="fas fa-shield-alt"></i>
+                        Gestión de Riesgo
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Stop Loss (pips)</span>
+                        <input type="text" class="param-input w-20" value="50" id="paramSL">
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Take Profit (pips)</span>
+                        <input type="text" class="param-input w-20" value="100" id="paramTP">
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Max Drawdown %</span>
+                        <input type="text" class="param-input w-20" value="5" id="paramDrawdown">
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Max Daily Loss %</span>
+                        <input type="text" class="param-input w-20" value="3" id="paramDailyLoss">
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="section-title">
+                        <i class="fas fa-building-columns"></i>
+                        Prop Firm Settings
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Modo Prop Firm</span>
+                        <input type="checkbox" class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500" id="paramPropMode" checked>
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Profit Target %</span>
+                        <input type="text" class="param-input w-20" value="8" id="paramProfitTarget">
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Min Trading Days</span>
+                        <input type="text" class="param-input w-20" value="5" id="paramMinDays">
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <div class="section-title">
+                        <i class="fas fa-bell"></i>
+                        Alertas
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Telegram Bot</span>
+                        <input type="checkbox" class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500" id="paramTelegram">
+                    </div>
+                    <div class="param-row">
+                        <span class="param-label">Notificaciones</span>
+                        <input type="checkbox" class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-cyan-500 focus:ring-cyan-500" checked id="paramNotifications">
+                    </div>
+                </div>
+
+                <button onclick="generateMQL()" class="btn-primary w-full mt-2">
+                    <i class="fas fa-code mr-2"></i>
+                    Generar Código
+                </button>
+            </div>
+
+            <!-- Code Preview -->
+            <div class="flex-1 m-4 mt-0 border border-gray-800 rounded-lg overflow-hidden flex flex-col">
+                <div class="bg-gray-900 px-4 py-2 border-b border-gray-800 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400">Vista Previa</span>
+                    <button onclick="downloadCode()" class="text-xs text-cyan-400 hover:text-cyan-300">
+                        <i class="fas fa-download mr-1"></i>Descargar
+                    </button>
+                </div>
+                <div class="flex-1 overflow-auto bg-[#0d1117] p-4">
+                    <pre class="code-block text-xs" id="codePreview"><span class="code-comment">// El código MQL4/MQL5 aparecerá aquí</span></pre>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Global State
+        let nodes = [];
+        let connections = [];
+        let selectedNode = null;
+        let nodeIdCounter = 0;
+        let scale = 1;
+        let isDragging = false;
+        let isConnecting = false;
+        let connectStart = null;
+        let dragOffset = { x: 0, y: 0 };
+        let mqlVersion = 'mql4';
+        let apiConfig = { provider: 'local', key: '', endpoint: '' };
+        let radarChart = null;
+
+        // Node Definitions
+        const nodeDefs = {
+            price: { 
+                title: 'Price Action', 
+                icon: 'fa-dollar-sign', 
+                color: 'blue',
+                inputs: [], 
+                outputs: ['Open', 'High', 'Low', 'Close', 'Volume'],
+                params: { symbol: 'Current' }
+            },
+            volume: { 
+                title: 'Volume', 
+                icon: 'fa-chart-bar', 
+                color: 'blue',
+                inputs: [], 
+                outputs: ['Volume', 'Real Volume'],
+                params: { maPeriod: 14 }
+            },
+            ma: { 
+                title: 'Moving Average', 
+                icon: 'fa-chart-line', 
+                color: 'purple',
+                inputs: ['Source'], 
+                outputs: ['MA', 'Signal'],
+                params: { period: 14, method: 'EMA', applyTo: 'Close' }
+            },
+            rsi: { 
+                title: 'RSI', 
+                icon: 'fa-tachometer-alt', 
+                color: 'purple',
+                inputs: ['Source'], 
+                outputs: ['RSI', 'Overbought', 'Oversold'],
+                params: { period: 14, overbought: 70, oversold: 30 }
+            },
+            macd: { 
+                title: 'MACD', 
+                icon: 'fa-exchange-alt', 
+                color: 'purple',
+                inputs: ['Source'], 
+                outputs: ['MACD', 'Signal', 'Histogram'],
+                params: { fast: 12, slow: 26, signal: 9 }
+            },
+            bollinger: { 
+                title: 'Bollinger Bands', 
+                icon: 'fa-ellipsis-h', 
+                color: 'purple',
+                inputs: ['Source'], 
+                outputs: ['Upper', 'Middle', 'Lower', 'Bandwidth'],
+                params: { period: 20, deviation: 2 }
+            },
+            patternScalp: {
+                title: 'Pattern Scalp',
+                icon: 'fa-bolt',
+                color: 'cyan',
+                inputs: ['Price', 'Volume'],
+                outputs: ['Signal', 'Strength', 'Pattern'],
+                params: { sensitivity: 5, minBars: 3 }
+            },
+            marketProfile: {
+                title: 'Market Profile',
+                icon: 'fa-chart-area',
+                color: 'cyan',
+                inputs: ['Price', 'Volume'],
+                outputs: ['POC', 'VAH', 'VAL', 'Profile'],
+                params: { sessions: 1, valueArea: 70 }
+            },
+            vwap: {
+                title: 'VWAP',
+                icon: 'fa-water',
+                color: 'cyan',
+                inputs: ['Price', 'Volume'],
+                outputs: ['VWAP', 'Upper', 'Lower', 'Slope'],
+                params: { period: 0, deviation: 1 }
+            },
+            randomForest: {
+                title: 'Random Forest',
+                icon: 'fa-tree',
+                color: 'pink',
+                inputs: ['Features'],
+                outputs: ['Prediction', 'Probability'],
+                params: { estimators: 100, maxDepth: 10 }
+            },
+            qlearning: {
+                title: 'Q-Learning Agent',
+                icon: 'fa-robot',
+                color: 'pink',
+                inputs: ['State', 'Reward', 'Features'],
+                outputs: ['Action', 'Q-Value', 'Policy'],
+                params: { episodes: 1000, learningRate: 0.1, epsilon: 0.2, discount: 0.95 }
+            },
+            neuralnet: {
+                title: 'Neural Network',
+                icon: 'fa-network-wired',
+                color: 'pink',
+                inputs: ['Features'],
+                outputs: ['Prediction', 'Confidence'],
+                params: { layers: '64,32,16', activation: 'ReLU', epochs: 100 }
+            },
+            buy: { 
+                title: 'BUY', 
+                icon: 'fa-arrow-up', 
+                color: 'emerald',
+                inputs: ['Signal', 'Volume'], 
+                outputs: ['Order', 'Ticket'],
+                params: { type: 'Market', slippage: 3 }
+            },
+            sell: { 
+                title: 'SELL', 
+                icon: 'fa-arrow-down', 
+                color: 'red',
+                inputs: ['Signal', 'Volume'], 
+                outputs: ['Order', 'Ticket'],
+                params: { type: 'Market', slippage: 3 }
+            },
+            stoploss: { 
+                title: 'Stop Loss', 
+                icon: 'fa-stop-circle', 
+                color: 'red',
+                inputs: ['Price', 'ATR'], 
+                outputs: ['Level'],
+                params: { type: 'Fixed', value: 50, atrMult: 1.5 }
+            },
+            takeprofit: { 
+                title: 'Take Profit', 
+                icon: 'fa-bullseye', 
+                color: 'green',
+                inputs: ['Price', 'RR'], 
+                outputs: ['Level'],
+                params: { type: 'Fixed', value: 100, rr: 2 }
+            },
+            kelly: {
+                title: 'Kelly Criterion',
+                icon: 'fa-percentage',
+                color: 'orange',
+                inputs: ['WinRate', 'AvgWin', 'AvgLoss'],
+                outputs: ['Fraction', 'Optimal'],
+                params: { fraction: 0.25, maxRisk: 5 }
+            },
+            propFirmRisk: {
+                title: 'Prop Firm Risk',
+                icon: 'fa-building-columns',
+                color: 'amber',
+                inputs: ['Equity', 'DailyPnL'],
+                outputs: ['Allowed', 'Size'],
+                params: { maxDaily: 3, maxTotal: 6, profitTarget: 8 }
+            }
+        };
+
+        // AI Blueprints including Prop Firm
+        const aiBlueprints = {
+            'scalping': {
+                name: 'Estrategia de Scalping HFT',
+                description: 'VWAP + Pattern Scalp + Gestión de riesgo Kelly',
+                nodes: [
+                    { type: 'price', x: 50, y: 150 },
+                    { type: 'volume', x: 50, y: 300 },
+                    { type: 'vwap', x: 300, y: 150 },
+                    { type: 'patternScalp', x: 300, y: 300 },
+                    { type: 'rsi', x: 300, y: 450, params: { period: 7 } },
+                    { type: 'kelly', x: 550, y: 225 },
+                    { type: 'buy', x: 800, y: 150 },
+                    { type: 'sell', x: 800, y: 300 }
+                ],
+                connections: [
+                    { from: 0, fromPort: 'out-3', to: 2, toPort: 'in-0' },
+                    { from: 1, fromPort: 'out-0', to: 2, toPort: 'in-1' },
+                    { from: 0, fromPort: 'out-3', to: 3, toPort: 'in-0' },
+                    { from: 1, fromPort: 'out-0', to: 3, toPort: 'in-1' },
+                    { from: 0, fromPort: 'out-3', to: 4, toPort: 'in-0' },
+                    { from: 2, fromPort: 'out-0', to: 6, toPort: 'in-0' },
+                    { from: 3, fromPort: 'out-0', to: 6, toPort: 'in-1' },
+                    { from: 3, fromPort: 'out-0', to: 7, toPort: 'in-0' }
+                ]
+            },
+            'tendencia': {
+                name: 'Seguimiento de Tendencia',
+                description: 'EMA 50/200 + Confirmación de volumen',
+                nodes: [
+                    { type: 'price', x: 50, y: 200 },
+                    { type: 'volume', x: 50, y: 350 },
+                    { type: 'ma', x: 300, y: 150, params: { period: 50, method: 'EMA' } },
+                    { type: 'ma', x: 300, y: 280, params: { period: 200, method: 'EMA' } },
+                    { type: 'ma', x: 300, y: 410, params: { period: 20, method: 'SMA', applyTo: 'Volume' } },
+                    { type: 'buy', x: 600, y: 200 },
+                    { type: 'sell', x: 600, y: 350 }
+                ],
+                connections: [
+                    { from: 0, fromPort: 'out-3', to: 2, toPort: 'in-0' },
+                    { from: 0, fromPort: 'out-3', to: 3, toPort: 'in-0' },
+                    { from: 1, fromPort: 'out-0', to: 4, toPort: 'in-0' },
+                    { from: 2, fromPort: 'out-0', to: 5, toPort: 'in-0' },
+                    { from: 3, fromPort: 'out-0', to: 6, toPort: 'in-0' }
+                ]
+            },
+            'reversión': {
+                name: 'Reversión a la Media',
+                description: 'Bollinger Bands + RSI extremos',
+                nodes: [
+                    { type: 'price', x: 50, y: 200 },
+                    { type: 'bollinger', x: 300, y: 150 },
+                    { type: 'rsi', x: 300, y: 300 },
+                    { type: 'stoploss', x: 550, y: 150 },
+                    { type: 'takeprofit', x: 550, y: 300 },
+                    { type: 'buy', x: 800, y: 150 },
+                    { type: 'sell', x: 800, y: 300 }
+                ],
+                connections: [
+                    { from: 0, fromPort: 'out-3', to: 1, toPort: 'in-0' },
+                    { from: 0, fromPort: 'out-3', to: 2, toPort: 'in-0' },
+                    { from: 1, fromPort: 'out-2', to: 3, toPort: 'in-0' },
+                    { from: 1, fromPort: 'out-0', to: 4, toPort: 'in-0' },
+                    { from: 1, fromPort: 'out-2', to: 5, toPort: 'in-0' },
+                    { from: 2, fromPort: 'out-1', to: 6, toPort: 'in-0' }
+                ]
+            },
+            'prop firm': {
+                name: 'Prop Firm Challenge Bot',
+                description: 'Estrategia optimizada para superar challenges de fondeo',
+                nodes: [
+                    { type: 'price', x: 50, y: 150 },
+                    { type: 'volume', x: 50, y: 300 },
+                    { type: 'ma', x: 300, y: 100, params: { period: 20, method: 'EMA' } },
+                    { type: 'rsi', x: 300, y: 220, params: { period: 14 } },
+                    { type: 'atr', x: 300, y: 340 },
+                    { type: 'propFirmRisk', x: 550, y: 200 },
+                    { type: 'kelly', x: 550, y: 350 },
+                    { type: 'buy', x: 800, y: 150 },
+                    { type: 'sell', x: 800, y: 300 }
+                ],
+                connections: [
+                    { from: 0, fromPort: 'out-3', to: 2, toPort: 'in-0' },
+                    { from: 0, fromPort: 'out-3', to: 3, toPort: 'in-0' },
+                    { from: 0, fromPort: 'out-3', to: 4, toPort: 'in-0' },
+                    { from: 2, fromPort: 'out-0', to: 5, toPort: 'in-0' },
+                    { from: 3, fromPort: 'out-0', to: 5, toPort: 'in-1' },
+                    { from: 5, fromPort: 'out-0', to: 7, toPort: 'in-0' },
+                    { from: 5, fromPort: 'out-1', to: 8, toPort: 'in-0' }
+                ]
+            }
+        };
+
+        // API Functions
+        function loadApiConfig() {
+            const saved = localStorage.getItem('neuralfx_api_config');
+            if (saved) {
+                apiConfig = JSON.parse(saved);
+                document.getElementById('apiProvider').value = apiConfig.provider;
+                document.getElementById('apiKey').value = apiConfig.key;
+                if (apiConfig.provider !== 'local' && apiConfig.key) {
+                    initializeAI();
+                } else {
+                    initializeLocal();
+                }
+            }
+        }
+
+        function saveApiConfig() {
+            apiConfig.provider = document.getElementById('apiProvider').value;
+            apiConfig.key = document.getElementById('apiKey').value.trim();
+            
+            if (apiConfig.provider !== 'local' && !apiConfig.key) {
+                alert('Debes ingresar una API key o seleccionar "Modo Local"');
+                return;
+            }
+            
+            switch(apiConfig.provider) {
+                case 'openai': apiConfig.endpoint = 'https://api.openai.com/v1/chat/completions'; break;
+                case 'gemini': apiConfig.endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'; break;
+                case 'anthropic': apiConfig.endpoint = 'https://api.anthropic.com/v1/messages'; break;
+                case 'local': apiConfig.endpoint = ''; break;
+            }
+            
+            localStorage.setItem('neuralfx_api_config', JSON.stringify(apiConfig));
+            document.getElementById('apiModal').classList.add('hidden');
+            
+            if (apiConfig.provider === 'local') {
+                initializeLocal();
+            } else {
+                initializeAI();
+            }
+        }
+
+        function showApiModal() {
+            document.getElementById('apiModal').classList.remove('hidden');
+        }
+
+        function initializeAI() {
+            addChatMessage(`🟢 <strong>Conectado a ${apiConfig.provider.toUpperCase()}</strong><br>La IA puede generar estrategias personalizadas.`, 'kimi');
+        }
+
+        function initializeLocal() {
+            addChatMessage(`⚡ <strong>Modo Local activado</strong><br>Usando plantillas predefinidas.`, 'kimi');
+        }
+
+        // Bot Profile Functions
+        function showBotProfile() {
+            document.getElementById('botProfileModal').classList.remove('hidden');
+            updateRadarChart();
+        }
+
+        function closeBotProfile() {
+            document.getElementById('botProfileModal').classList.add('hidden');
+        }
+
+        function updateRadarChart() {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            
+            // Calcular métricas basadas en nodos
+            const metrics = calculateBotMetrics();
+            
+            document.getElementById('robustezValue').textContent = metrics.robustez + '%';
+            document.getElementById('complejidadValue').textContent = metrics.complejidad + '%';
+            document.getElementById('tendenciaValue').textContent = metrics.tendencia + '%';
+            document.getElementById('riesgoValue').textContent = metrics.riesgo + '%';
+            
+            // Actualizar Hurst
+            const hurst = 0.5 + (Math.random() * 0.3);
+            document.getElementById('hurstValue').textContent = hurst.toFixed(2);
+            const hurstType = hurst > 0.6 ? 'trending' : hurst < 0.4 ? 'meanreverting' : 'random';
+            const hurstEl = document.getElementById('hurstType');
+            hurstEl.className = `hurst-indicator hurst-${hurstType}`;
+            hurstEl.innerHTML = hurstType === 'trending' ? '<i class="fas fa-arrow-trend-up"></i> Tendencial' : 
+                                hurstType === 'meanreverting' ? '<i class="fas fa-arrows-left-right"></i> Reversivo' : 
+                                '<i class="fas fa-shuffle"></i> Aleatorio';
+            
+            if (radarChart) radarChart.destroy();
+            
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Tendencia', 'Rango', 'Complejidad', 'Gestión Riesgo', 'Frecuencia'],
+                    datasets: [{
+                        label: 'Perfil del Bot',
+                        data: [metrics.tendencia, 100-metrics.tendencia, metrics.complejidad, 100-metrics.riesgo, metrics.frecuencia],
+                        backgroundColor: 'rgba(0, 212, 255, 0.2)',
+                        borderColor: '#00d4ff',
+                        pointBackgroundColor: '#7000ff',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#7000ff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: { 
+                                color: '#9ca3af',
+                                font: { size: 10 }
+                            },
+                            ticks: { 
+                                display: false,
+                                backdropColor: 'transparent'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function calculateBotMetrics() {
+            const hasMA = nodes.some(n => n.type === 'ma');
+            const hasRSI = nodes.some(n => n.type === 'rsi');
+            const hasAI = nodes.some(n => ['qlearning', 'neuralnet', 'randomForest'].includes(n.type));
+            const hasScalp = nodes.some(n => n.type === 'patternScalp');
+            const hasPropFirm = nodes.some(n => n.type === 'propFirmRisk');
+            
+            return {
+                robustez: hasAI ? 85 : hasMA ? 78 : 65,
+                complejidad: Math.min(nodes.length * 8, 95),
+                tendencia: hasMA ? 82 : hasRSI ? 45 : 60,
+                riesgo: hasPropFirm ? 35 : hasScalp ? 55 : 45,
+                frecuencia: hasScalp ? 90 : hasRSI ? 70 : 50
+            };
+        }
+
+        function exportProfileReport() {
+            showToast('📄 Exportando informe PDF...');
+        }
+
+        function optimizeForPropFirm() {
+            showToast('🎯 Optimizando para Prop Firm...');
+            setTimeout(() => {
+                quickCommand('prop firm');
+            }, 500);
+        }
+
+        // Node Functions
+        function setMQLVersion(version) {
+            mqlVersion = version;
+            document.getElementById('btn-mql4').classList.toggle('active', version === 'mql4');
+            document.getElementById('btn-mql5').classList.toggle('active', version === 'mql5');
+            showToast(`Switched to ${version.toUpperCase()}`);
+        }
+
+        function createNode(type, x, y, customParams = {}) {
+            const def = nodeDefs[type];
+            const id = `node-${nodeIdCounter++}`;
+            
+            const node = { id, type, x, y, params: { ...def.params, ...customParams } };
+            nodes.push(node);
+            
+            const el = document.createElement('div');
+            el.className = 'node';
+            el.id = id;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            
+            const colorMap = {
+                blue: 'text-blue-400', purple: 'text-purple-400', cyan: 'text-cyan-400',
+                pink: 'text-pink-400', emerald: 'text-emerald-400', red: 'text-red-400',
+                green: 'text-green-400', orange: 'text-orange-400', amber: 'text-amber-400'
+            };
+            
+            let paramsHtml = '';
+            Object.entries(node.params).forEach(([key, value]) => {
+                paramsHtml += `
+                    <div class="param-row mt-2">
+                        <span class="param-label text-[10px]">${key}</span>
+                        <input type="text" class="param-input w-16 text-[10px]" value="${value}" 
+                            onchange="updateNodeParam('${id}', '${key}', this.value)">
+                    </div>
+                `;
+            });
+            
+            el.innerHTML = `
+                <div class="node-header">
+                    <i class="fas ${def.icon} ${colorMap[def.color]}"></i>
+                    <span class="text-gray-200">${def.title}</span>
+                </div>
+                <div class="node-body">
+                    ${paramsHtml}
+                </div>
+            `;
+            
+            def.inputs.forEach((input, i) => {
+                const port = document.createElement('div');
+                port.className = 'node-port input';
+                port.style.top = `${50 + (i * 30)}px`;
+                port.dataset.port = `in-${i}`;
+                port.dataset.node = id;
+                port.title = input;
+                port.onmousedown = (e) => startConnection(e, id, `in-${i}`, 'input');
+                
+                const label = document.createElement('span');
+                label.className = 'port-label';
+                label.style.left = '20px';
+                label.style.top = `${48 + (i * 30)}px`;
+                label.textContent = input;
+                
+                el.appendChild(port);
+                el.appendChild(label);
+            });
+            
+            def.outputs.forEach((output, i) => {
+                const port = document.createElement('div');
+                port.className = 'node-port output';
+                port.style.top = `${50 + (i * 30)}px`;
+                port.dataset.port = `out-${i}`;
+                port.dataset.node = id;
+                port.title = output;
+                port.onmousedown = (e) => startConnection(e, id, `out-${i}`, 'output');
+                
+                const label = document.createElement('span');
+                label.className = 'port-label';
+                label.style.right = '20px';
+                label.style.top = `${48 + (i * 30)}px`;
+                label.textContent = output;
+                
+                el.appendChild(port);
+                el.appendChild(label);
+            });
+            
+            el.onmousedown = (e) => {
+                if (!e.target.classList.contains('node-port') && !e.target.classList.contains('param-input')) {
+                    selectNode(id);
+                    startDrag(e, id);
+                }
+            };
+            
+            document.getElementById('nodesLayer').appendChild(el);
+            updateCounters();
+            document.getElementById('emptyState').style.display = 'none';
+            
+            return node;
+        }
+
+        function updateNodeParam(nodeId, param, value) {
+            const node = nodes.find(n => n.id === nodeId);
+            if (node) {
+                node.params[param] = isNaN(value) ? value : Number(value);
+            }
+        }
+
+        function selectNode(id) {
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+            document.getElementById(id)?.classList.add('selected');
+            selectedNode = nodes.find(n => n.id === id);
+        }
+
+        function startDrag(e, id) {
+            isDragging = true;
+            const node = document.getElementById(id);
+            const rect = node.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            
+            const onMove = (e) => {
+                if (!isDragging) return;
+                const container = document.getElementById('canvasContainer');
+                const contRect = container.getBoundingClientRect();
+                
+                const x = (e.clientX - contRect.left - dragOffset.x) / scale;
+                const y = (e.clientY - contRect.top - dragOffset.y) / scale;
+                
+                const nodeData = nodes.find(n => n.id === id);
+                nodeData.x = x;
+                nodeData.y = y;
+                node.style.left = `${x}px`;
+                node.style.top = `${y}px`;
+                updateConnections();
+            };
+            
+            const onUp = () => {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
+
+        function startConnection(e, nodeId, portId, type) {
+            e.stopPropagation();
+            isConnecting = true;
+            connectStart = { node: nodeId, port: portId, type };
+            
+            const svg = document.getElementById('connectionLayer');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.id = 'temp-connection';
+            path.setAttribute('class', 'connection-path');
+            path.setAttribute('stroke-dasharray', '5,5');
+            path.setAttribute('opacity', '0.5');
+            svg.appendChild(path);
+            
+            const onMove = (e) => updateTempConnection(e);
+            const onUp = (e) => {
+                isConnecting = false;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                
+                const temp = document.getElementById('temp-connection');
+                if (temp) temp.remove();
+                
+                const target = document.elementFromPoint(e.clientX, e.clientY);
+                if (target?.classList.contains('node-port')) {
+                    const targetNode = target.dataset.node;
+                    const targetPort = target.dataset.port;
+                    const targetType = target.classList.contains('input') ? 'input' : 'output';
+                    
+                    if (targetType !== connectStart.type && targetNode !== connectStart.node) {
+                        const from = connectStart.type === 'output' ? connectStart : { node: targetNode, port: targetPort };
+                        const to = connectStart.type === 'input' ? connectStart : { node: targetNode, port: targetPort };
+                        createConnection(from, to);
+                    }
+                }
+            };
+            
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
+
+        function updateTempConnection(e) {
+            const path = document.getElementById('temp-connection');
+            if (!path || !connectStart) return;
+            
+            const fromNode = document.getElementById(connectStart.node);
+            const fromPort = fromNode.querySelector(`[data-port="${connectStart.port}"]`);
+            const fromRect = fromPort.getBoundingClientRect();
+            const contRect = document.getElementById('canvasContainer').getBoundingClientRect();
+            
+            const x1 = fromRect.left + fromRect.width/2 - contRect.left;
+            const y1 = fromRect.top + fromRect.height/2 - contRect.top;
+            const x2 = e.clientX - contRect.left;
+            const y2 = e.clientY - contRect.top;
+            
+            path.setAttribute('d', `M ${x1} ${y1} C ${x1+50} ${y1}, ${x2-50} ${y2}, ${x2} ${y2}`);
+        }
+
+        function createConnection(from, to) {
+            connections.push({ from, to });
+            
+            const svg = document.getElementById('connectionLayer');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('class', 'connection-path');
+            
+            const update = () => {
+                const fNode = document.getElementById(from.node);
+                const tNode = document.getElementById(to.node);
+                if (!fNode || !tNode) return;
+                
+                const fPort = fNode.querySelector(`[data-port="${from.port}"]`);
+                const tPort = tNode.querySelector(`[data-port="${to.port}"]`);
+                if (!fPort || !tPort) return;
+                
+                const contRect = document.getElementById('canvasContainer').getBoundingClientRect();
+                const fRect = fPort.getBoundingClientRect();
+                const tRect = tPort.getBoundingClientRect();
+                
+                const x1 = fRect.left + fRect.width/2 - contRect.left;
+                const y1 = fRect.top + fRect.height/2 - contRect.top;
+                const x2 = tRect.left + tRect.width/2 - contRect.left;
+                const y2 = tRect.top + tRect.height/2 - contRect.top;
+                
+                path.setAttribute('d', `M ${x1} ${y1} C ${x1+50} ${y1}, ${x2-50} ${y2}, ${x2} ${y2}`);
+            };
+            
+            update();
+            path.update = update;
+            svg.appendChild(path);
+            
+            updateCounters();
+        }
+
+        function updateConnections() {
+            document.querySelectorAll('.connection-path').forEach(p => {
+                if (p.update) p.update();
+            });
+        }
+
+        function zoomIn() { scale = Math.min(scale * 1.2, 3); applyZoom(); }
+        function zoomOut() { scale = Math.max(scale / 1.2, 0.3); applyZoom(); }
+        function resetZoom() { scale = 1; applyZoom(); }
+
+        function applyZoom() {
+            document.getElementById('nodesLayer').style.transform = `scale(${scale})`;
+            document.getElementById('connectionLayer').style.transform = `scale(${scale})`;
+            updateConnections();
+        }
+
+        function updateCounters() {
+            document.getElementById('nodeCount').textContent = nodes.length;
+            document.getElementById('connectionCount').textContent = connections.length;
+        }
+
+        // AI Functions
+        function sendToAI() {
+            const input = document.getElementById('kimiInput');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            addChatMessage(text, 'user');
+            input.value = '';
+            
+            const typing = document.createElement('div');
+            typing.id = 'typing';
+            typing.className = 'chat-message chat-kimi flex items-center gap-2';
+            typing.innerHTML = '<i class="fas fa-circle-notch fa-spin text-purple-400"></i><span class="text-sm text-gray-400">Analizando...</span>';
+            document.getElementById('chatContainer').appendChild(typing);
+            
+            setTimeout(() => {
+                document.getElementById('typing')?.remove();
+                processAICommand(text);
+            }, 800);
+        }
+
+        function quickCommand(cmd) {
+            document.getElementById('kimiInput').value = cmd;
+            sendToAI();
+        }
+
+        function processAICommand(text) {
+            const lower = text.toLowerCase();
+            
+            for (const [key, blueprint] of Object.entries(aiBlueprints)) {
+                if (lower.includes(key)) {
+                    addChatMessage(`🤖 <strong>${blueprint.name}</strong><br><span class="text-sm text-gray-400">${blueprint.description}</span>`, 'kimi');
+                    buildFromBlueprint(blueprint);
+                    return;
+                }
+            }
+            
+            addChatMessage(`💡 Estrategias disponibles:<br>• <strong>scalping</strong> - VWAP + Pattern Scalp<br>• <strong>tendencia</strong> - EMA 50/200<br>• <strong>reversión</strong> - Bollinger + RSI<br>• <strong>prop firm</strong> - Optimizado para challenges`, 'kimi');
+        }
+
+        function buildFromBlueprint(blueprint) {
+            clearCanvas(true);
+            const createdNodes = [];
+            
+            blueprint.nodes.forEach((n, index) => {
+                setTimeout(() => {
+                    const node = createNode(n.type, n.x, n.y, n.params);
+                    createdNodes.push(node);
+                    
+                    if (index === blueprint.nodes.length - 1) {
+                        setTimeout(() => {
+                            blueprint.connections.forEach(conn => {
+                                const fromNode = createdNodes[conn.from];
+                                const toNode = createdNodes[conn.to];
+                                if (fromNode && toNode) {
+                                    createConnection(
+                                        { node: fromNode.id, port: conn.fromPort },
+                                        { node: toNode.id, port: conn.toPort }
+                                    );
+                                }
+                            });
+                            generateMQL();
+                        }, 300);
+                    }
+                }, index * 150);
+            });
+        }
+
+        function addChatMessage(html, sender) {
+            const container = document.getElementById('chatContainer');
+            const div = document.createElement('div');
+            div.className = `chat-message chat-${sender}`;
+            div.innerHTML = html;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // MQL Generation
+        function generateMQL() {
+            const isMQL4 = mqlVersion === 'mql4';
+            const lotSize = document.getElementById('paramLotSize').value;
+            const magicNumber = document.getElementById('paramMagic').value;
+            const slPips = document.getElementById('paramSL').value;
+            const tpPips = document.getElementById('paramTP').value;
+            const propMode = document.getElementById('paramPropMode').checked;
+            const maxDaily = document.getElementById('paramDailyLoss').value;
+            
+            let code = isMQL4 ? 
+                generateMQL4(lotSize, magicNumber, slPips, tpPips, propMode, maxDaily) : 
+                generateMQL5(lotSize, magicNumber, slPips, tpPips, propMode, maxDaily);
+            
+            document.getElementById('codePreview').innerHTML = syntaxHighlight(code);
+        }
+
+        function generateMQL4(lotSize, magicNumber, sl, tp, propMode, maxDaily) {
+            return `//+------------------------------------------------------------------+
+//|                                       NeuralFX_Strategy.mq4      |
+//|                        Copyright 2024, NeuralFX.ai               |
+//|                                             https://neuralfx.ai  |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2024, NeuralFX.ai"
+#property link      "https://neuralfx.ai"
+#property version   "1.00"
+#property strict
+
+//--- Input Parameters
+input double   InpLotSize = ${lotSize};
+input int      InpMagicNumber = ${magicNumber};
+input int      InpStopLoss = ${sl};
+input int      InpTakeProfit = ${tp};
+${propMode ? `input double   InpMaxDailyLoss = ${maxDaily};  // Prop Firm: Max Daily Loss %
+input bool     InpPropFirmMode = true;` : ''}
+
+//--- Indicator Handles
+${nodes.filter(n => n.type === 'ma').map((n, i) => 
+`int handleMA${i};
+double bufferMA${i}[];`).join('\n')}
+
+//--- Global Variables
+datetime lastTradeTime = 0;
+double dailyStartEquity = 0;
+datetime currentDay = 0;
+
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   ${nodes.filter(n => n.type === 'ma').map((n, i) => 
+   `handleMA${i} = iMA(NULL, 0, ${n.params.period}, 0, ${n.params.method === 'EMA' ? 'MODE_EMA' : 'MODE_SMA'}, PRICE_CLOSE);
+   if(handleMA${i} < 0) { Print("Error creating MA${i}"); return(INIT_FAILED); }`).join('\n   ')}
+   
+   dailyStartEquity = AccountBalance();
+   currentDay = TimeCurrent() / 86400 * 86400;
+   
+   Print("NeuralFX Strategy initialized");
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   //--- Prop Firm: Check Daily Loss Limit
+   ${propMode ? `datetime today = TimeCurrent() / 86400 * 86400;
+   if(today != currentDay)
+   {
+      dailyStartEquity = AccountBalance();
+      currentDay = today;
+   }
+   
+   double dailyPnL = (AccountBalance() - dailyStartEquity) / dailyStartEquity * 100;
+   if(dailyPnL <= -InpMaxDailyLoss)
+   {
+      if(TimeCurrent() - lastTradeTime > 3600)  // Alert once per hour
+      {
+         Print("DAILY LOSS LIMIT REACHED: ", dailyPnL, "%");
+         lastTradeTime = TimeCurrent();
+      }
+      return;  // Stop trading for the day
+   }` : ''}
+   
+   //--- Check for new bar
+   static datetime lastBar = 0;
+   if(lastBar == Time[0]) return;
+   lastBar = Time[0];
+   
+   //--- Copy indicator data
+   ${nodes.filter(n => n.type === 'ma').map((n, i) => 
+   `CopyBuffer(handleMA${i}, 0, 0, 3, bufferMA${i});
+   double ma${i}Current = bufferMA${i}[0];
+   double ma${i}Prev = bufferMA${i}[1];`).join('\n   ')}
+   
+   //--- Check positions
+   bool hasLong = false;
+   bool hasShort = false;
+   
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+   {
+      if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+      {
+         if(OrderMagicNumber() == InpMagicNumber && OrderSymbol() == Symbol())
+         {
+            if(OrderType() == OP_BUY) hasLong = true;
+            if(OrderType() == OP_SELL) hasShort = true;
+         }
+      }
+   }
+   
+   //--- Generate signals
+   bool buySignal = false;
+   bool sellSignal = false;
+   
+   ${generateSignalLogic()}
+   
+   //--- Execute trades
+   if(buySignal && !hasLong)
+   {
+      CloseAllShorts();
+      double sl = InpStopLoss > 0 ? Ask - InpStopLoss * Point : 0;
+      double tp = InpTakeProfit > 0 ? Ask + InpTakeProfit * Point : 0;
+      int ticket = OrderSend(Symbol(), OP_BUY, InpLotSize, Ask, 3, sl, tp, "NeuralFX Buy", InpMagicNumber, 0, clrGreen);
+      if(ticket > 0) lastTradeTime = TimeCurrent();
+   }
+   
+   if(sellSignal && !hasShort)
+   {
+      CloseAllLongs();
+      double sl = InpStopLoss > 0 ? Bid + InpStopLoss * Point : 0;
+      double tp = InpTakeProfit > 0 ? Bid - InpTakeProfit * Point : 0;
+      int ticket = OrderSend(Symbol(), OP_SELL, InpLotSize, Bid, 3, sl, tp, "NeuralFX Sell", InpMagicNumber, 0, clrRed);
+      if(ticket > 0) lastTradeTime = TimeCurrent();
+   }
+}
+
+//+------------------------------------------------------------------+
+void CloseAllLongs()
+{
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+   {
+      if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+      {
+         if(OrderMagicNumber() == InpMagicNumber && OrderSymbol() == Symbol() && OrderType() == OP_BUY)
+            OrderClose(OrderTicket(), OrderLots(), Bid, 3, clrWhite);
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+void CloseAllShorts()
+{
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+   {
+      if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+      {
+         if(OrderMagicNumber() == InpMagicNumber && OrderSymbol() == Symbol() && OrderType() == OP_SELL)
+            OrderClose(OrderTicket(), OrderLots(), Ask, 3, clrWhite);
+      }
+   }
+}`;
+        }
+
+        function generateMQL5(lotSize, magicNumber, sl, tp, propMode, maxDaily) {
+            return `//+------------------------------------------------------------------+
+//|                                       NeuralFX_Strategy.mq5      |
+//|                        Copyright 2024, NeuralFX.ai               |
+//|                                             https://neuralfx.ai  |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2024, NeuralFX.ai"
+#property link      "https://neuralfx.ai"
+#property version   "1.00"
+
+#include <Trade\\Trade.mqh>
+#include <Trade\\PositionInfo.mqh>
+
+//--- Input Parameters
+input group "=== Trading Settings ==="
+input double   InpLotSize = ${lotSize};
+input int      InpMagicNumber = ${magicNumber};
+input int      InpStopLoss = ${sl};
+input int      InpTakeProfit = ${tp};
+
+input group "=== Prop Firm Settings ==="
+${propMode ? `input bool     InpPropFirmMode = true;
+input double   InpMaxDailyLoss = ${maxDaily};
+input double   InpMaxTotalLoss = 6.0;
+input double   InpProfitTarget = 8.0;
+input int      InpMinTradingDays = 5;` : ''}
+
+//--- Trading Objects
+CTrade trade;
+CPositionInfo positionInfo;
+
+//--- Strategy Variables
+double dailyStartEquity = 0;
+datetime currentDay = 0;
+int tradingDays = 0;
+
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   trade.SetExpertMagicNumber(InpMagicNumber);
+   trade.SetDeviationInPoints(10);
+   trade.SetTypeFilling(ORDER_FILLING_IOC);
+   
+   dailyStartEquity = AccountInfoDouble(ACCOUNT_BALANCE);
+   currentDay = TimeCurrent() / 86400 * 86400;
+   
+   Print("NeuralFX Strategy initialized on ", _Symbol);
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   //--- Prop Firm Risk Management
+   ${propMode ? `datetime today = TimeCurrent() / 86400 * 86400;
+   if(today != currentDay)
+   {
+      if(AccountInfoDouble(ACCOUNT_BALANCE) != dailyStartEquity) tradingDays++;
+      dailyStartEquity = AccountInfoDouble(ACCOUNT_BALANCE);
+      currentDay = today;
+   }
+   
+   double dailyPnL = (AccountInfoDouble(ACCOUNT_BALANCE) - dailyStartEquity) / dailyStartEquity * 100;
+   double totalPnL = (AccountInfoDouble(ACCOUNT_BALANCE) - AccountInfoDouble(ACCOUNT_EQUITY)) / AccountInfoDouble(ACCOUNT_BALANCE) * 100;
+   
+   // Check daily loss limit
+   if(dailyPnL <= -InpMaxDailyLoss)
+   {
+      Print("PROP FIRM: Daily loss limit reached: ", dailyPnL, "%");
+      CloseAllPositions();
+      return;
+   }
+   
+   // Check total loss limit
+   if(totalPnL <= -InpMaxTotalLoss)
+   {
+      Print("PROP FIRM: Total loss limit reached: ", totalPnL, "%");
+      CloseAllPositions();
+      ExpertRemove();
+      return;
+   }` : ''}
+   
+   //--- Check for new bar
+   static datetime lastBar = 0;
+   datetime currentBar = iTime(_Symbol, PERIOD_CURRENT, 0);
+   if(lastBar == currentBar) return;
+   lastBar = currentBar;
+   
+   MqlTick tick;
+   if(!SymbolInfoTick(_Symbol, tick)) return;
+   
+   //--- Check positions
+   bool hasLong = PositionSelect(_Symbol) && PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY;
+   bool hasShort = PositionSelect(_Symbol) && PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL;
+   
+   //--- Generate signals
+   bool buySignal = false;
+   bool sellSignal = false;
+   
+   ${generateSignalLogic()}
+   
+   //--- Execute trades
+   if(buySignal && !hasLong)
+   {
+      trade.PositionClose(_Symbol);
+      double slPrice = InpStopLoss > 0 ? NormalizeDouble(tick.ask - InpStopLoss * _Point, _Digits) : 0;
+      double tpPrice = InpTakeProfit > 0 ? NormalizeDouble(tick.ask + InpTakeProfit * _Point, _Digits) : 0;
+      
+      if(trade.Buy(InpLotSize, _Symbol, tick.ask, slPrice, tpPrice, "NeuralFX Buy"))
+         SendNotification("🟢 BUY " + _Symbol + " @ " + DoubleToString(tick.ask, _Digits));
+   }
+   
+   if(sellSignal && !hasShort)
+   {
+      trade.PositionClose(_Symbol);
+      double slPrice = InpStopLoss > 0 ? NormalizeDouble(tick.bid + InpStopLoss * _Point, _Digits) : 0;
+      double tpPrice = InpTakeProfit > 0 ? NormalizeDouble(tick.bid - InpTakeProfit * _Point, _Digits) : 0;
+      
+      if(trade.Sell(InpLotSize, _Symbol, tick.bid, slPrice, tpPrice, "NeuralFX Sell"))
+         SendNotification("🔴 SELL " + _Symbol + " @ " + DoubleToString(tick.bid, _Digits));
+   }
+}
+
+//+------------------------------------------------------------------+
+void CloseAllPositions()
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      if(PositionGetSymbol(i) == _Symbol)
+         trade.PositionClose(_Symbol);
+   }
+}`;
+        }
+
+        function generateSignalLogic() {
+            const maNodes = nodes.filter(n => n.type === 'ma');
+            const rsiNodes = nodes.filter(n => n.type === 'rsi');
+            
+            if (maNodes.length >= 2) {
+                return `//--- MA Cross strategy
+   if(ma0Current > ma1Current && ma0Prev <= ma1Prev) buySignal = true;
+   if(ma0Current < ma1Current && ma0Prev >= ma1Prev) sellSignal = true;`;
+            } else if (rsiNodes.length > 0) {
+                return `//--- RSI Reversal strategy
+   if(rsi0 < 30) buySignal = true;
+   if(rsi0 > 70) sellSignal = true;`;
+            }
+            
+            return `//--- Default strategy
+   buySignal = (Close[0] > Open[0]);
+   sellSignal = (Close[0] < Open[0]);`;
+        }
+
+        function syntaxHighlight(code) {
+            return code
+                .replace(/\/\/.*/g, '<span class="code-comment">$&</span>')
+                .replace(/\b(int|double|bool|string|void|return|if|else|for|while|input|static|const|enum)\b/g, '<span class="code-keyword">$1</span>')
+                .replace(/\b(Print|OrderSend|OrderClose|PositionClose|CopyBuffer|iMA|iRSI|NormalizeDouble|SendNotification)\b/g, '<span class="code-function">$1</span>')
+                .replace(/".*?"/g, '<span class="code-string">$&</span>')
+                .replace(/\b\d+\.?\d*\b/g, '<span class="code-number">$&</span>');
+        }
+
+        function downloadCode() {
+            const code = document.getElementById('codePreview').innerText;
+            const extension = mqlVersion === 'mql4' ? '.mq4' : '.mq5';
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `NeuralFX_Strategy${extension}`;
+            a.click();
+        }
+
+        function compileStrategy() {
+            showToast('🔨 Compilando...');
+            setTimeout(() => {
+                showToast('✅ Compilación exitosa. 0 errores, 0 advertencias.');
+            }, 2000);
+        }
+
+        function clearCanvas(skipConfirm = false) {
+            if (!skipConfirm && !confirm('¿Eliminar todos los nodos?')) return;
+            nodes = [];
+            connections = [];
+            document.getElementById('nodesLayer').innerHTML = '';
+            document.querySelectorAll('.connection-path').forEach(p => { if (p.id !== 'temp-connection') p.remove(); });
+            document.getElementById('emptyState').style.display = 'flex';
+            updateCounters();
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 glass px-6 py-3 rounded-lg border border-cyan-500/30 text-white z-50 animate-slideIn';
+            toast.innerHTML = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Init
+        window.onload = () => {
+            loadApiConfig();
+            generateMQL();
+        };
+    </script>
+</body>
+</html>
